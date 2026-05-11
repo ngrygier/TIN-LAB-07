@@ -1,10 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        #toolbar {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #toolbar input,
+        #toolbar select,
+        #toolbar button {
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background: white;
+        }
+
+        #toolbar button:hover {
+            background-color: #e0e0e0;
+        }
+
+        #info {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 10px;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(16, 30px);
+            grid-template-rows: repeat(16,30px);
+            gap: 2px;
+            background-color: #ccc;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            border: 1px solid #999;
+            transition: 0.2s;
+        }
+
+        .cell:hover {
+            filter: brightness(0.85);
+            cursor: pointer;
+        }
+    </style>
+    </style>
 </head>
 <body>
-$END$
+<div id = "toolbar">
+    <input type="color" id="color-picker" value = "#000000">
+    <select id="brush-size">
+        <option value="1x1">1x1</option>
+        <option value="2x2">2x2</option>
+        <option value="3x3">3x3</option>
+    </select>
+    <button id="erase-button">Gumka</button>
+    <button id="clear-button">Wyczyść</button>
+</div>
+
+<div id="info">
+    <span id = "info-row">-</span>
+    <span id = "info-col">-</span>
+    <span id = "info-count">0</span>
+</div>
+
+<div id = "grid"></div>
+<script>
+    const grid = document.getElementById("grid");
+    const colorPicker = document.getElementById("color-picker");
+    const eraseButton = document.getElementById("erase-button");
+    const clearButton = document.getElementById("clear-button");
+    const infoCount = document.getElementById("info-count");
+    const infoRow = document.getElementById("info-row");
+    const infoCol = document.getElementById("info-col");
+    const brushSize = document.getElementById("brush-size");
+
+    // funkcja kolorowania jednej komórki
+    function colorCell(cell){
+        if(!cell) return;
+
+        if(eraseMode){
+            cell.style.backgroundColor = "white";
+        }
+        else{
+            cell.style.backgroundColor = currentColor;
+        }
+    }
+
+    // funkcja pędzla
+    function paintBrush(row, col){
+        const size = parseInt(brushSize.value[0]);
+        for(let i = 0; i < size; i++){
+            for(let j = 0; j < size; j++){
+
+                const targetRow = row + i;
+                const targetCol = col + j;
+
+                const targetCell = document.querySelector(
+                    `.cell[data-row="${targetRow}"][data-col="${targetCol}"]`
+                );
+
+                colorCell(targetCell);
+            }
+        }
+    }
+
+    // wyzerowanie trybów
+    let currentColor = "#000000";
+    let eraseMode = false;
+    let paintedCount = 0;
+    let isDrawing = false;
+
+    // listener dla kolorowania ciągłego
+    grid.addEventListener("mousedown", () =>{
+        isDrawing = true;
+    });
+
+    //listener dla końca rysowania
+    document.addEventListener("mouseup", () => {
+        isDrawing = false;
+    });
+
+    // listener dla color picker
+    colorPicker.addEventListener("input", (e) => {
+        currentColor = e.target.value;
+        eraseMode = false;
+        });
+
+    // listener dla gumki
+    eraseButton.addEventListener("click", () => {
+        eraseMode = !eraseMode;
+    });
+
+    // listener dla wyczysc
+    clearButton.addEventListener("click", () => {
+        const cells = document.querySelectorAll(".cell");
+
+
+        cells.forEach((cell) => {
+            cell.style.backgroundColor = "white";
+        });
+        paintedCount = 0;
+        infoCount.textContent = paintedCount;
+    });
+
+    //key presses
+    document.addEventListener("keypress", (e) =>{
+        if(e.key === "c"){
+            const cells = document.querySelectorAll(".cell");
+            cells.forEach((cell) => {
+                cell.style.backgroundColor = "white";
+            });
+            paintedCount = 0;
+        }
+        if(e.key === "e"){
+            eraseMode = !eraseMode;
+        }
+        if(e.key === "1") {
+            brushSize.value = "1x1";
+        }
+        if(e.key === "2"){
+            brushSize.value = "2x2";
+        }
+        if(e.key === "3"){
+            brushSize.value = "3x3";
+        }
+    });
+
+    // ustawianie siatki
+
+    for(let i = 0; i<16; i++){
+        for(let j = 0; j < 16; j++){
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.dataset.row = i;
+            cell.dataset.col = j;
+
+            // jedno kliknięcie -  rysowanie
+            cell.addEventListener("click", () =>{
+                infoRow.textContent = `Row: ${i}`;
+                infoCol.textContent = `Col: ${j}`;
+
+                paintBrush(i, j);
+            });
+
+            // przytrzymywanie - rysowanie
+            cell.addEventListener("mouseover", () =>{
+                if(!isDrawing) return;
+
+                paintBrush(i, j);
+            });
+
+            //double click - kolorownie wiersza
+            cell.addEventListener("dblclick", () =>{
+                for(let j = 0; j<16; j++){
+                    paintBrush(i, j);
+                }
+            });
+
+            // context menu - usuwanie koloru
+            cell.addEventListener("contextmenu", (e) =>{
+                e.preventDefault();
+                cell.style.backgroundColor = "white";
+            });
+
+            grid.appendChild(cell);
+        }
+
+    }
+
+
+
+</script>
+
+
+
 </body>
 </html>
