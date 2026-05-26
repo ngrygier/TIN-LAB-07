@@ -10,14 +10,11 @@ const path =
 const PORT = 1080;
 
 
-
-
 // FUNKCJE POMOCNICZE
 
 
-
-
 function sendJSON(res, status, data){
+
 
     res.writeHead(status, {
 
